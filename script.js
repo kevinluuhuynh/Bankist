@@ -132,7 +132,7 @@ const updateUI = function () {
 // Event Handler
 let currentAccount;
 
-// Login function
+// LOGIN FUNCTION
 btnLogin.addEventListener('click', function (e) {
   // Prevents form from  submitting
   e.preventDefault();
@@ -154,7 +154,7 @@ btnLogin.addEventListener('click', function (e) {
   }
 });
 
-// Transfer Function
+// TRANSFER FUNCTION
 btnTransfer.addEventListener('click', function (e) {
   e.preventDefault();
 
@@ -180,7 +180,27 @@ btnTransfer.addEventListener('click', function (e) {
   }
 });
 
-// Closing account function
+// LOAN FUNCTION
+btnLoan.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  const loanAmount = Number(inputLoanAmount.value);
+
+  if (
+    loanAmount > 0 &&
+    currentAccount.actionRequest.some(mov => mov >= loanAmount * 0.1)
+  ) {
+    // Add action
+    currentAccount.actionRequest.push(loanAmount);
+
+    // Update UI
+    updateUI(currentAccount);
+  }
+
+  inputLoanAmount.value = '';
+});
+
+// CLOSING ACCOUNT FUNCTION
 btnClose.addEventListener('click', function (e) {
   e.preventDefault();
 
