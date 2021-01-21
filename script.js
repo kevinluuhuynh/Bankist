@@ -112,7 +112,7 @@ const inputClosePin = document.querySelector('.form__input--pin');
 /////////////////////////////////////////////////////////////////////////////////////////
 // FUNCTIONS
 
-const formatActionDates = function (transactionDate) {
+const formatActionDates = function (transactionDate, locale) {
   const calcDaysPassed = (date1, date2) =>
     Math.round(Math.abs(date2 - date1) / (1000 * 60 * 60 * 24));
 
@@ -123,10 +123,14 @@ const formatActionDates = function (transactionDate) {
   if (daysPassed === 1) return 'Yesterday';
   if (daysPassed < 7) return `${daysPassed} days ago`;
 
-  const month = `${transactionDate.getMonth() + 1}`.padStart(2, 0);
-  const day = `${transactionDate.getDate()}`.padStart(2, 0);
-  const year = transactionDate.getFullYear();
-  return `${month}/${day}/${year}`;
+  return new Intl.DateTimeFormat(locale).format(transactionDate);
+};
+
+const formatCurrency = function (value, locale, currency) {
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency: currency,
+  }).format(value);
 };
 
 const displayActions = function (account, sort = false) {
@@ -140,13 +144,19 @@ const displayActions = function (account, sort = false) {
     const type = request > 0 ? 'deposit' : 'withdrawal';
 
     const transctionDate = new Date(account.actionDates[i]);
-    const displayDate = formatActionDates(transctionDate);
+    const displayDate = formatActionDates(transctionDate, account.locale);
+
+    const formattedAction = formatCurrency(
+      request,
+      account.locale,
+      account.currency
+    );
 
     const html = `
     <div class="movements__row">
     <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
     <div class="movements__date">${displayDate}</div>
-    <div class="movements__value">${Math.abs(request).toFixed(2)}€</div>
+    <div class="movements__value">${formattedAction}</div>
     </div>`;
     containerMovements.insertAdjacentHTML('afterbegin', html);
   });
@@ -157,7 +167,12 @@ const calcDisplayBalance = function (account) {
     (acc, request) => acc + request,
     0
   );
-  labelBalance.textContent = `${account.balance.toFixed(2)}€`;
+
+  labelBalance.textContent = formatCurrency(
+    account.balance,
+    account.locale,
+    account.currency
+  );
 };
 
 const calcDisplaySummary = function (account) {
@@ -165,13 +180,21 @@ const calcDisplaySummary = function (account) {
     .filter(request => request > 0)
     .reduce((acc, request) => acc + request, 0);
 
-  labelSumIn.textContent = `${incoming.toFixed(2)}€`;
+  labelSumIn.textContent = formatCurrency(
+    incoming,
+    account.locale,
+    account.currency
+  );
 
   const outgoing = account.actionRequest
     .filter(request => request < 0)
     .reduce((acc, request) => acc + request, 0);
 
-  labelSumOut.textContent = `${Math.abs(outgoing.toFixed(2))}€`;
+  labelSumOut.textContent = formatCurrency(
+    Math.abs(outgoing),
+    account.locale,
+    account.currency
+  );
 
   const interest = account.actionRequest
     .filter(request => request > 0)
@@ -179,7 +202,11 @@ const calcDisplaySummary = function (account) {
     .filter(int => int >= 1)
     .reduce((acc, int) => acc + int, 0);
 
-  labelSumInterest.textContent = `${interest.toFixed(2)}€`;
+  labelSumInterest.textContent = formatCurrency(
+    interest,
+    account.locale,
+    account.currency
+  );
 };
 
 const createUsernames = function (accounts) {
@@ -228,12 +255,19 @@ btnLogin.addEventListener('click', function (e) {
 
     // Current Date
     const curDate = new Date();
-    const month = `${curDate.getMonth() + 1}`.padStart(2, 0);
-    const day = `${curDate.getDate()}`.padStart(2, 0);
-    const year = curDate.getFullYear();
-    const hour = `${curDate.getHours()}`.padStart(2, 0);
-    const min = `${curDate.getMinutes()}`.padStart(2, 0);
-    labelDate.textContent = `${month}/${day}/${year}, ${hour}:${min}`;
+    const options = {
+      hour: 'numeric',
+      minute: 'numeric',
+      day: 'numeric',
+      month: 'numeric',
+      year: 'numeric',
+    };
+
+    const locale = currentAccount.locale;
+
+    labelDate.textContent = new Intl.DateTimeFormat(locale, options).format(
+      curDate
+    );
 
     // Clear input fields
     inputLoginUsername.value = inputLoginPin.value = '';
